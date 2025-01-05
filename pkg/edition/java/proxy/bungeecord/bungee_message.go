@@ -47,6 +47,8 @@ type (
 	ServerProvider interface {
 		Server(name string) Server
 		Servers() []Server
+		AddJoinableServer(name string)
+		RemoveJoinableServer(name string)
 	}
 	// ServerConnectionProvider provides the currently connected server connection for a player.
 	ServerConnectionProvider interface {
@@ -155,6 +157,10 @@ func (r *bungeeCordMessageResponder) Process(message *plugin.Message) bool {
 		r.processKick(in)
 	case "KickPlayerRaw":
 		r.processKickRaw(in)
+	case "AddJoinableServer":
+		r.processAddJoinableServer(in)
+	case "RemoveJoinableServer":
+		r.processRemoveJoinableServer(in)
 	default:
 		// Unknown sub-channel, do nothing
 	}
@@ -426,6 +432,22 @@ func (r *bungeeCordMessageResponder) processKickRaw(in io.Reader) {
 		}
 		player.Disconnect(kickReason)
 	})
+}
+
+func (r *bungeeCordMessageResponder) processAddJoinableServer(in io.Reader) {
+	serverName, err := util.ReadUTF(in)
+	if err != nil {
+		return
+	}
+	r.AddJoinableServer(serverName)
+}
+
+func (r *bungeeCordMessageResponder) processRemoveJoinableServer(in io.Reader) {
+	serverName, err := util.ReadUTF(in)
+	if err != nil {
+		return
+	}
+	r.RemoveJoinableServer(serverName)
 }
 
 //

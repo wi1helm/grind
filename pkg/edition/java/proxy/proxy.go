@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/lite"
-	"go.minekube.com/gate/pkg/edition/java/proto/state"
 	"net"
 	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"go.minekube.com/gate/pkg/edition/java/lite"
+	"go.minekube.com/gate/pkg/edition/java/proto/state"
 
 	"github.com/go-logr/logr"
 	"github.com/pires/go-proxyproto"
@@ -50,8 +51,9 @@ type Proxy struct {
 	cancelStart context.CancelFunc
 	started     bool
 
-	muS     sync.RWMutex                 // Protects following field
-	servers map[string]*registeredServer // registered backend servers: by lower case names
+	muS             sync.RWMutex                 // Protects following field
+	servers         map[string]*registeredServer // registered backend servers: by lower case names
+	joinableServers *JoinableServerManager
 
 	muP         sync.RWMutex                   // Protects following fields
 	playerNames map[string]*connectedPlayer    // lower case usernames map
@@ -101,6 +103,7 @@ func New(options Options) (p *Proxy, err error) {
 		event:            eventMgr,
 		channelRegistrar: message.NewChannelRegistrar(),
 		servers:          map[string]*registeredServer{},
+		joinableServers:  NewJoinableServerManager(),
 		playerNames:      map[string]*connectedPlayer{},
 		playerIDs:        map[uuid.UUID]*connectedPlayer{},
 		authenticator:    authn,
@@ -402,7 +405,6 @@ var ErrServerAlreadyExists = errors.New("server already exists")
 
 var _ ServerRegistry = (*Proxy)(nil)
 
-// Register - See ServerRegistrar
 func (p *Proxy) Register(info ServerInfo) (RegisteredServer, error) {
 	if info == nil {
 		return nil, errors.New("info must not be nil")
@@ -423,6 +425,7 @@ func (p *Proxy) Register(info ServerInfo) (RegisteredServer, error) {
 	}
 	rs := newRegisteredServer(info)
 	p.servers[name] = rs
+	p.joinableServers.Add(name) // Add to joinable servers
 
 	p.log.Info("registered new server", "name", info.Name(), "addr", info.Addr())
 	return rs, nil
@@ -442,6 +445,7 @@ func (p *Proxy) Unregister(info ServerInfo) bool {
 		return false
 	}
 	delete(p.servers, name)
+	p.joinableServers.Remove(name) // Remove from joinable servers
 
 	p.log.Info("unregistered backend server",
 		"name", info.Name(), "addr", info.Addr())
@@ -715,3 +719,19 @@ type (
 		config() *config.Config
 	}
 )
+
+func (p *Proxy) AddJoinableServer(name string) {
+	p.joinableServers.Add(name)
+}
+
+func (p *Proxy) RemoveJoinableServer(name string) {
+	p.joinableServers.Remove(name)
+}
+
+func (p *Proxy) GetJoinableServers() []string {
+	return p.joinableServers.GetAll()
+}
+
+func (p *Proxy) IsServerJoinable(name string) bool {
+	return p.joinableServers.IsJoinable(name)
+}

@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.minekube.com/gate/pkg/edition/java/forge/modernforge"
-	"go.minekube.com/gate/pkg/edition/java/profile"
-	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 	"net"
 	"strings"
 	"sync"
 	"time"
+
+	"go.minekube.com/gate/pkg/edition/java/forge/modernforge"
+	"go.minekube.com/gate/pkg/edition/java/profile"
+	"go.minekube.com/gate/pkg/edition/java/proto/state/states"
 
 	"github.com/dboslee/lru"
 	"github.com/go-logr/logr"
@@ -111,6 +112,7 @@ func (p *players) remove(players ...*connectedPlayer) {
 type ServerInfo interface {
 	Name() string   // Returns the server name.
 	Addr() net.Addr // Returns the server address.
+
 }
 
 func NewServerInfo(name string, addr net.Addr) ServerInfo {
@@ -571,4 +573,50 @@ func (s *serverConnection) completeJoin() {
 
 func (s *serverConnection) config() *config.Config {
 	return s.player.config()
+}
+
+// JoinableServerManager manages joinable servers in the proxy.
+type JoinableServerManager struct {
+	mu      sync.RWMutex
+	servers map[string]struct{}
+}
+
+// NewJoinableServerManager creates a new instance of JoinableServerManager.
+func NewJoinableServerManager() *JoinableServerManager {
+	return &JoinableServerManager{
+		servers: make(map[string]struct{}),
+	}
+}
+
+// Add adds a server to the list of joinable servers.
+func (jm *JoinableServerManager) Add(serverName string) {
+	jm.mu.Lock()
+	defer jm.mu.Unlock()
+	jm.servers[serverName] = struct{}{}
+}
+
+// Remove removes a server from the list of joinable servers.
+func (jm *JoinableServerManager) Remove(serverName string) {
+	jm.mu.Lock()
+	defer jm.mu.Unlock()
+	delete(jm.servers, serverName)
+}
+
+// GetAll retrieves all joinable servers.
+func (jm *JoinableServerManager) GetAll() []string {
+	jm.mu.RLock()
+	defer jm.mu.RUnlock()
+	var result []string
+	for serverName := range jm.servers {
+		result = append(result, serverName)
+	}
+	return result
+}
+
+// IsJoinable checks if a server is joinable.
+func (jm *JoinableServerManager) IsJoinable(serverName string) bool {
+	jm.mu.RLock()
+	defer jm.mu.RUnlock()
+	_, exists := jm.servers[serverName]
+	return exists
 }

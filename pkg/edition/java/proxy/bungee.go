@@ -169,3 +169,19 @@ func convertSlice[T any](a []Player) []T {
 	}
 	return b
 }
+
+// AddJoinableServer adds a server to the joinable server list.
+func (b *bungeeMessageResponderAdapter) AddJoinableServer(name string) {
+	if b.Proxy == nil {
+		return
+	}
+	b.Proxy.AddJoinableServer(name)
+}
+
+// RemoveJoinableServer removes a server from the joinable server list.
+func (b *bungeeMessageResponderAdapter) RemoveJoinableServer(name string) {
+	if b.Proxy == nil {
+		return
+	}
+	b.Proxy.RemoveJoinableServer(name)
+}

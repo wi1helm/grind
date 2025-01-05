@@ -458,41 +458,35 @@ func (p *connectedPlayer) SendPluginMessage(identifier message.ChannelIdentifier
 }
 
 // Finds another server to attempt to log into, if we were unexpectedly disconnected from the server.
-// current is the current server of the player is on, so we skip this server and not connect to it.
+// current is the current server the player is on, so we skip this server and not connect to it.
 // current can be nil if there is no current server.
-// MAY RETURN NIL if no next server available!
+// MAY RETURN NIL if no next server is available!
 func (p *connectedPlayer) nextServerToTry(current RegisteredServer) RegisteredServer {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if len(p.serversToTry) == 0 {
-		p.serversToTry = p.config().ForcedHosts[p.virtualHost.String()]
+
+	// Get the list of servers dynamically instead of from config
+	servers := p.proxy.Servers()
+	if len(servers) == 0 {
+		fmt.Println("No servers available.")
+		return nil
 	}
-	if len(p.serversToTry) == 0 {
-		connOrder := p.config().Try
-		if len(connOrder) == 0 {
-			return nil
-		} else {
-			p.serversToTry = connOrder
+
+	// Iterate through dynamically registered servers
+	for _, server := range servers {
+		// Skip the current server or non-joinable servers
+		if current != nil && current.ServerInfo().Name() == server.ServerInfo().Name() {
+			continue
 		}
-	}
-
-	sameName := func(rs RegisteredServer, name string) bool {
-		return rs.ServerInfo().Name() == name
-	}
-
-	for i := p.tryIndex; i < len(p.serversToTry); i++ {
-		toTry := p.serversToTry[i]
-		if (p.connectedServer_ != nil && sameName(p.connectedServer_.Server(), toTry)) ||
-			(p.connInFlight != nil && sameName(p.connInFlight.Server(), toTry)) ||
-			(current != nil && sameName(current, toTry)) {
+		if !p.proxy.joinableServers.IsJoinable(server.ServerInfo().Name()) {
 			continue
 		}
 
-		p.tryIndex = i
-		if s := p.proxy.Server(toTry); s != nil {
-			return s
-		}
+		// Select the first available joinable server
+		return server
 	}
+
+	// No more servers to try
 	return nil
 }
 
