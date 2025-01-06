@@ -10,7 +10,7 @@ import (
 
 // DefaultConfig is the default configuration for the Config.
 var DefaultConfig = Config{
-	Bind: "localhost:8080",
+	Bind: "0.0.0.0:8080",
 }
 
 // Config is the configuration for the Gate API.
