@@ -18,8 +18,10 @@ require (
 	github.com/gookit/color v1.5.4
 	github.com/jellydator/ttlcache/v3 v3.3.0
 	github.com/knadh/koanf/providers/file v1.2.0
+	github.com/minekube/gate-plugin-template v0.0.0-20250423200519-2ef0d606ef60
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pires/go-proxyproto v0.8.0
+	github.com/redis/go-redis/v9 v9.7.0
 	github.com/robinbraemer/event v0.1.1
 	github.com/rs/xid v1.6.0
 	github.com/sandertv/go-raknet v1.13.0
@@ -45,6 +47,7 @@ require (
 
 require (
 	buf.build/gen/go/minekube/connect/protocolbuffers/go v1.36.6-20240220124425-904ce30425c9.1 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
@@ -56,10 +59,8 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
-	github.com/minekube/gate-plugin-template v0.0.0-20250423200519-2ef0d606ef60 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/redis/go-redis/v9 v9.7.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.9.0 // indirect
 	github.com/segmentio/fasthash v1.0.3 // indirect

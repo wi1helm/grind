@@ -11,6 +11,7 @@ RUN go mod download
 # Copy the go source
 COPY cmd ./cmd
 COPY pkg ./pkg
+COPY plugins ./plugins
 COPY gate.go ./
 
 # Automatically provided by the buildkit
