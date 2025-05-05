@@ -9,11 +9,36 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"go.minekube.com/gate/cmd/gate"
+	"go.minekube.com/gate/pkg/edition/java/proxy"
+	"go.minekube.com/gate/plugins/ping"
 )
 
 var redisClient *redis.Client
 
 func main() {
+
+	// Here we register our plugins with the proxy.
+	proxy.Plugins = append(proxy.Plugins,
+		// We have some demo plugins in the plugins/ directory,
+		// but you can also import your own plugins from other repositories.
+		//
+		// Checkout https://github.com/minekube/awesome for some inspiration.
+		ping.Plugin,
+
+		// Add more plugins as you like.
+		// They will be initialized in the same order as appended.
+	)
+
+	// Standalone bool
+	standalone := false
+
+	if standalone {
+		log.Println("🧪 Running in STANDALONE mode — skipping Redis and Kubernetes discovery.")
+		// Start Gate proxy
+		gate.Execute()
+		return
+	}
+
 	// Initialize Redis connection
 	redisAddr := os.Getenv("REDIS_ADDR")         // Redis address from environment variable
 	redisPassword := os.Getenv("REDIS_PASSWORD") // Redis password

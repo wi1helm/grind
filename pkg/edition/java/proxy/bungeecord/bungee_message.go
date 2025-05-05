@@ -2,9 +2,11 @@ package bungeecord
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net"
 	"strings"
+	"time"
 
 	"go.minekube.com/common/minecraft/component"
 	"go.minekube.com/common/minecraft/component/codec"
@@ -157,6 +159,12 @@ func (r *bungeeCordMessageResponder) Process(message *plugin.Message) bool {
 		r.processKick(in)
 	case "KickPlayerRaw":
 		r.processKickRaw(in)
+	case "AddJoinableServer":
+		r.processAddJoinableServer(in)
+	case "RemoveJoinableServer":
+		r.processRemoveJoinableServer(in)
+	case "ServerSelectorInfo":
+		r.processServerSelectorInfo()
 
 	default:
 		// Unknown sub-channel, do nothing
@@ -432,25 +440,71 @@ func (r *bungeeCordMessageResponder) processKickRaw(in io.Reader) {
 	})
 }
 
+func (r *bungeeCordMessageResponder) processAddJoinableServer(in io.Reader) {
+	serverName, err := util.ReadUTF(in)
+	if err != nil {
+		return
+	}
+	r.AddJoinableServer(serverName)
+}
 
+func (r *bungeeCordMessageResponder) processRemoveJoinableServer(in io.Reader) {
+	serverName, err := util.ReadUTF(in)
+	if err != nil {
+		return
+	}
+	r.RemoveJoinableServer(serverName)
+}
 
+func (r *bungeeCordMessageResponder) processServerSelectorInfo() {
+	// Create buffer for the response message
+	b := new(bytes.Buffer)
+	_ = util.WriteUTF(b, "ServerSelectorInfo")
 
+	// Collect server names and player counts
+	serverNames := joiner{split: " "}
+	playerCounts := joiner{split: " "}
+	offlineServers := joiner{split: " "}
+	for _, server := range r.Servers() {
+		// Check if the server is online before including it
+		if !serverIsOnline(server) {
+			// Skip this server
+			offlineServers.write(server.Name())
+		}
 
+		serverNames.write(server.Name())
+		playerCounts.write(fmt.Sprintf("%d", server.PlayerCount()))
+	}
 
+	// Include the list of server names
+	_ = util.WriteUTF(b, serverNames.String())
 
+	// Include the list of player counts as space-separated values
+	_ = util.WriteUTF(b, playerCounts.String())
 
+	// Include the list of offline servers as space-separated values
+	_ = util.WriteUTF(b, offlineServers.String())
 
+	// Include the player's current server name
+	if currentServer := r.ConnectedServer(); currentServer != nil {
+		_ = util.WriteUTF(b, currentServer.Name())
+	} else {
+		_ = util.WriteUTF(b, "") // Empty if no current server
+	}
+	// Send the constructed message as a response
+	r.sendServerResponse(b.Bytes())
+}
 
-
-
-
-
-
-
-
-
-
-
+func serverIsOnline(server Server) bool {
+	// Attempt to establish a TCP connection to the server's address
+	conn, err := net.DialTimeout("tcp", server.Addr().String(), 500*time.Millisecond)
+	if err != nil {
+		// Connection failed; server is likely offline
+		return false
+	}
+	conn.Close()
+	return true
+}
 
 //
 //
