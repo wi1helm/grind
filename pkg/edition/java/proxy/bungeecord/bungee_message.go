@@ -157,10 +157,7 @@ func (r *bungeeCordMessageResponder) Process(message *plugin.Message) bool {
 		r.processKick(in)
 	case "KickPlayerRaw":
 		r.processKickRaw(in)
-	case "AddJoinableServer":
-		r.processAddJoinableServer(in)
-	case "RemoveJoinableServer":
-		r.processRemoveJoinableServer(in)
+
 	default:
 		// Unknown sub-channel, do nothing
 	}
@@ -338,6 +335,7 @@ func (r *bungeeCordMessageResponder) processGetServers() {
 	b := new(bytes.Buffer)
 	_ = util.WriteUTF(b, "GetServers")
 	_ = util.WriteUTF(b, list.String())
+	r.sendServerResponse(b.Bytes())
 }
 
 func (r *bungeeCordMessageResponder) processMessage0(in io.Reader, decoder codec.Unmarshaler) {
@@ -434,21 +432,25 @@ func (r *bungeeCordMessageResponder) processKickRaw(in io.Reader) {
 	})
 }
 
-func (r *bungeeCordMessageResponder) processAddJoinableServer(in io.Reader) {
-	serverName, err := util.ReadUTF(in)
-	if err != nil {
-		return
-	}
-	r.AddJoinableServer(serverName)
-}
 
-func (r *bungeeCordMessageResponder) processRemoveJoinableServer(in io.Reader) {
-	serverName, err := util.ReadUTF(in)
-	if err != nil {
-		return
-	}
-	r.RemoveJoinableServer(serverName)
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //
 //
